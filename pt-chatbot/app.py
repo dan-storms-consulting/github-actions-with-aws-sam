@@ -12,27 +12,53 @@ def lambda_handler(event, context):
 
     intent_name = event["sessionState"]["intent"]["name"]
 
-    if intent_name == "get-info":
-        return notification_email(event, intent_name)
+    if intent_name == "GetContactInfoIntent":
+        return parse_get_contact_info_intent(event, intent_name)
     # elif (add more intents here for multi-intent bots)
     else:
         raise Exception("Intent with name %s not supported" % intent_name)
 
 
-def notification_email(event, intent_name):
+# retrieves contact info from the GetContactInfoIntent Lex intent and returns
+def parse_get_contact_info_intent(event, intent_name):  # rename function
     slots = event["sessionState"]["intent"]["slots"]
 
-    try:
-        lead_name = slots.get("patient-name")
-        lead_phone = slots.get("phone")
-        lead_email = slots.get("email")
+    try:  # TODO need to figure out how None is based from Lex
+        # Required fields
+        try:
+            first_name_slot = slots.get("FirstNameSlot")
+            last_name_slot = slots.get("LastNameSlot")
+            email_slot = slots.get("EmailSlot")
+            phone_slot = slots.get("PhoneSlot")
+        except:
+            raise Exception("Required field not provided")
 
-        logger.debug(lead_name)
-        logger.debug(lead_phone)
-        logger.debug(lead_email)
+        # Optional fields
+        try:
+            # TODO might need if None
+            insurance_company_slot = slots.get("InsuranceCompanySlot")
+            insurance_number_slot = slots.get("InsuranceNumberSlot")
+            date_of_birth_slot = slots.get("DateOfBirthSlot")
+        except:
+            raise Exception(
+                "is this really an exception?"
+            )  # does lex just provide nulls by default?
+
+        # dict to return
+        contact_info = {
+            "first_name_slot": first_name_slot,
+            "last_name_slot": last_name_slot,
+            "email_slot": email_slot,
+            "phone_slot": phone_slot,
+            "insurance_company_slot": insurance_company_slot,
+            "insurance_number_slot": insurance_number_slot,
+            "date_of_birth_slot": date_of_birth_slot,
+        }
+
+        logger.debug(contact_info)
 
         # TODO call notification function
-        confirmation_number = email(lead_name, lead_phone, lead_email)
+        confirmation_number = send_email(contact_info)
 
         message = (
             "Thanks, I have let our staff know and they will reach out to you shortly. Your confirmation number is "
@@ -41,75 +67,45 @@ def notification_email(event, intent_name):
         fulfillment_state = "Fulfilled"
 
     except:
-        raise Exception("Unsupported slot included %s", slot)
-        logger.debug("Unsupported slot included %s", slot)
+        raise Exception("tbd")
+        logger.debug("tbd")
 
-    return close(
-        intent_name,
-        fulfillment_state,
-        message,
-    )
-
-
-def close(intent_name, fulfillment_state, message):
-    response = {
-        "sessionState": {
-            "dialogAction": {"type": "Close"},
-            "intent": {
-                "confirmationState": "Confirmed",
-                "name": "get-info",
-                "state": "Fulfilled",
-            },
-        }
-    }
-    return response
+    # return close(
+    #     intent_name,
+    #     fulfillment_state,
+    #     message,
+    # )
 
 
-def email(lead_name, lead_phone, lead_email):
+# def close(intent_name, fulfillment_state, message):
+#     response = {
+#         "sessionState": {
+#             "dialogAction": {"type": "Close"},
+#             "intent": {
+#                 "confirmationState": "Confirmed",
+#                 "name": "get-info",
+#                 "state": "Fulfilled",
+#             },
+#         }
+#     }
+#     #return response
+#     #return intent_name
+
+
+def send_email(contact_info):
+
+    # TODO SES stuff
     confirmation_number = "A12345"
 
     return confirmation_number
 
-
-# import requests
-
-
-def lambda_handler(event, context):
-    """Sample pure Lambda function
-
-    Parameters
-    ----------
-    event: dict, required
-        API Gateway Lambda Proxy Input Format
-
-        Event doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
-
-    context: object, required
-        Lambda Context runtime methods and attributes
-
-        Context doc: https://docs.aws.amazon.com/lambda/latest/dg/python-context-object.html
-
-    Returns
-    ------
-    API Gateway Lambda Proxy Output Format: dict
-
-        Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
-    """
-
-    # try:
-    #     ip = requests.get("http://checkip.amazonaws.com/")
-    # except requests.RequestException as e:
-    #     # Send some context about this error to Lambda Logs
-    #     print(e)
-
-    #     raise e
-
-    return {
-        "statusCode": 200,
-        "body": json.dumps(
-            {
-                "message": "hello world",
-                # "location": ip.text.replace("\n", "")
-            }
-        ),
-    }
+    # return {
+    #     "statusCode": 200,
+    #     "body": json.dumps(
+    #         {
+    #             "intent_name": event
+    #             # "message": "hello world",
+    #             # "location": ip.text.replace("\n", "")
+    #         }
+    #     ),
+    # }
