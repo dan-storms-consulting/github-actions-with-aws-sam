@@ -129,9 +129,13 @@ def send_email(contact_info):
     BODY_TEXT = (
         "PT-Chatbot Test\r\n"
         "PT chatbot here! A patient has a question or would like to schedule an appointment "
-        + str(contact_info)
         + f"""First Name: {contact_info.get("first_name_interpreted")}\r\n
-        !"""
+        Last Name: {contact_info.get("last_name_interpreted")}\r\n
+        Email: {contact_info.get("email_interpreted")}\r\n
+        Phone: {contact_info.get("phone_interpreted")}\r\n
+        Insurance Company: {contact_info.get("insurance_company_interpreted")}\r\n
+        Insurance Number: {contact_info.get("insurance_number_interpreted")}\r\n
+        Date of Birth: {contact_info.get("date_of_birth_interpreted")}\r\n"""
     )
 
     # "first_name_interpreted": first_name_interpreted,
@@ -143,18 +147,23 @@ def send_email(contact_info):
     # "date_of_birth_interpreted": date_of_birth_interpreted,
 
     # The HTML body of the email.
-    BODY_HTML = (
-        """<html>
+    BODY_HTML = f"""<html>
     <head></head>
     <body>
     <h1>PT-Chatbot Test</h1>
-    <p>PT chatbot here! A patient has a question or would like to schedule an appointment """
-        + str(contact_info)
-        + """</p>
+    <p>
+    <br>PT chatbot here! A patient has a question or would like to schedule an appointment <br>
+    <br>First Name: {contact_info.get("first_name_interpreted")}
+    <br>Last Name: {contact_info.get("last_name_interpreted")}
+    <br>Email: {contact_info.get("email_interpreted")}
+    <br>Phone: {contact_info.get("phone_interpreted")}
+    <br>Insurance Company: {contact_info.get("insurance_company_interpreted")}
+    <br>Insurance Number: {contact_info.get("insurance_number_interpreted")}
+    <br>Date of Birth: {contact_info.get("date_of_birth_interpreted")}
+    </p>
     </body>
     </html>
                 """
-    )
 
     # The character encoding for the email.
     CHARSET = "UTF-8"
