@@ -1,20 +1,27 @@
-import json
+# import json
 import logging
+import os
+import string
+import random
+import boto3
+from botocore.exceptions import ClientError
+
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 
-def lambda_handler(event, context):
-    # logger.debug(event)
-    # logger.debug(event["sessionState"]["intent"])
-    # logger.debug(event["sessionState"]["intent"]["slots"])
+# TODO add better logging/exceptions
+# TODO add except Exception as e:
 
+
+def lambda_handler(event, context):
     intent_name = event["sessionState"]["intent"]["name"]
 
     if intent_name == "GetContactInfoIntent":
-        response_parameters = parse_get_contact_info_intent(event, intent_name)
-
+        response_parameters = parse_get_contact_info_intent(
+            event
+        )  # TODO is intent_name needed
         message = response_parameters[0]
         fulfillment_state = response_parameters[1]
 
@@ -24,15 +31,12 @@ def lambda_handler(event, context):
         raise Exception("Intent with name %s not supported" % intent_name)
 
 
-# retrieves contact info from the GetContactInfoIntent Lex intent and returns
-def parse_get_contact_info_intent(event, intent_name):  # rename function
+# Retrieves contact info from the GetContactInfoIntent Lex intent and returns it
+def parse_get_contact_info_intent(event):  # TODO is intent_name needed
     slots = event["sessionState"]["intent"]["slots"]
 
-    try:  # TODO need to figure out how None is based from Lex
+    try:
         # Required fields
-
-        # dict format {'first_name_slot': {'originalValue': 'dan', 'interpretedValue': 'dan', 'resolvedValues': []},
-
         try:
             first_name_interpreted = (
                 slots.get("FirstNameSlot").get("value").get("interpretedValue")
@@ -51,7 +55,6 @@ def parse_get_contact_info_intent(event, intent_name):  # rename function
 
         # Optional fields
         try:
-            # TODO might need if None
             insurance_company_interpreted = (
                 slots.get("InsuranceCompanySlot").get("value").get("interpretedValue")
             )
@@ -62,9 +65,7 @@ def parse_get_contact_info_intent(event, intent_name):  # rename function
                 slots.get("DateOfBirthSlot").get("value").get("interpretedValue")
             )
         except:
-            raise Exception(
-                "is this really an exception?"
-            )  # does lex just provide nulls by default?
+            raise Exception("is this really an exception?")
 
         # dict to return
         contact_info = {
@@ -76,35 +77,23 @@ def parse_get_contact_info_intent(event, intent_name):  # rename function
             "insurance_number_interpreted": insurance_number_interpreted,
             "date_of_birth_interpreted": date_of_birth_interpreted,
         }
-
         logger.debug(contact_info)
 
-        # TODO call notification function
-        confirmation_number = send_email(contact_info)
+        # Call the function to send the email w/ contact info to clinic and return a confirmation number
+        confirmation_number = send_email_to_clinic(contact_info)
 
-        # f'Hello, {name}!'
-        message = f"Thanks, I have let our staff know and they will reach out to you shortly. Your confirmation number is {confirmation_number}"  # TODO str format
+        # Set the message and fullfillment state to return to Lex
+        message = f"Thanks, I have let our staff know and they will reach out to you shortly. Your confirmation number is {confirmation_number}"
         fulfillment_state = "Fulfilled"
 
         return message, fulfillment_state
 
     except Exception as e:
-
-        # raise Exception("tbd")
-        logger.debug("tbd")
+        logger.debug("There was an error pasing GetContactInfoIntent for Lex")
         print(e)
 
 
-def send_email(contact_info):
-
-    # TODO SES stuff
-    confirmation_number = "A12345"
-
-    import boto3
-    from botocore.exceptions import ClientError
-    import os
-    import string
-    import random
+def send_email_to_clinic(contact_info):
 
     # Generate a confirmation code to pass to Lex and SES
     confirmation_number = "".join(
@@ -112,22 +101,16 @@ def send_email(contact_info):
     )
     logger.debug(confirmation_number)
 
-    sender_email = os.environ[
-        "SENDER"
-    ]  # This address must be verified with Amazon SES.
-    recipient_email = os.environ[
+    SENDER = os.environ["SENDER"]  # This address must be verified with Amazon SES.
+    RECIPIENT = os.environ[
         "RECIPIENT"
-    ]  # If your account is still in the sandbox, this address must be verified.
+    ]  # If your account is still in the sandbox, this address must be verified. #TODO this should be a list
 
-    SENDER = sender_email  # "Sender Name <" + sender_email + ">"
-    RECIPIENT = recipient_email
-
-    # Specify a configuration set. If you do not want to use a configuration
-    # set, comment the following variable, and the
+    # TODO could be useful for analytics https://docs.aws.amazon.com/ses/latest/dg/using-configuration-sets.html
+    # Specify a configuration set. If you do not want to use a configuration set, comment the following variable, and the
     # ConfigurationSetName=CONFIGURATION_SET argument below.
-    # CONFIGURATION_SET = "ConfigSet"  # TODO could be useful for analytics https://docs.aws.amazon.com/ses/latest/dg/using-configuration-sets.html
+    # CONFIGURATION_SET = "ConfigSet"
 
-    # If necessary, replace us-west-2 with the AWS Region you're using for Amazon SES.
     AWS_REGION = "us-east-1"
 
     # The subject line for the email.
@@ -146,14 +129,6 @@ def send_email(contact_info):
         Date of Birth: {contact_info.get("date_of_birth_interpreted")}\r\n
         Confirmation Number: {confirmation_number}"""
     )
-
-    # "first_name_interpreted": first_name_interpreted,
-    # "last_name_interpreted": last_name_interpreted,
-    # "email_interpreted": email_interpreted,
-    # "phone_interpreted": phone_interpreted,
-    # "insurance_company_interpreted": insurance_company_interpreted,
-    # "insurance_number_interpreted": insurance_number_interpreted,
-    # "date_of_birth_interpreted": date_of_birth_interpreted,
 
     # The HTML body of the email.
     BODY_HTML = f"""<html>
@@ -181,7 +156,7 @@ def send_email(contact_info):
     # Create a new SES resource and specify a region.
     client = boto3.client("ses", region_name=AWS_REGION)
 
-    # Try to send the email.
+    # Send the email with contact information
     try:
         # Provide the contents of the email.
         response = client.send_email(
@@ -211,6 +186,7 @@ def send_email(contact_info):
             # following line
             # ConfigurationSetName=CONFIGURATION_SET,
         )
+
     # Display an error if something goes wrong.
     except ClientError as e:
         print(e.response["Error"]["Message"])
@@ -223,20 +199,26 @@ def send_email(contact_info):
 
 
 def close(intent_name, fulfillment_state, message):
-    response = {
-        "sessionState": {
-            "dialogAction": {"type": "Close"},
-            "intent": {
-                "confirmationState": "Confirmed",
-                "name": intent_name,
-                "state": "Fulfilled",
+
+    try:
+        response = {
+            "sessionState": {
+                "dialogAction": {"type": "Close"},
+                "intent": {
+                    "confirmationState": "Confirmed",
+                    "name": intent_name,
+                    "state": fulfillment_state,
+                },
             },
-        },
-        "messages": [
-            {
-                "contentType": "PlainText",
-                "content": message,
-            }
-        ],
-    }
-    return response
+            "messages": [
+                {
+                    "contentType": "PlainText",
+                    "content": message,
+                }
+            ],
+        }
+        return response
+
+    except Exception as e:
+        logger.debug("There was an error generating the response to return to Lex")
+        print(e)
