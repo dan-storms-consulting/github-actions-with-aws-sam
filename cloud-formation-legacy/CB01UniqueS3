@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: 2010-09-09
+Metadata:
+  'AWS::CloudFormation::Designer':
+    c4a39afa-8014-47c5-84c4-2d6fc385e097:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 100
+        'y': 72
+      z: 0
+      embeds: []
+Resources:
+  CB01UniqueS3:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Join 
+        - '-'
+        - - chat-bot
+          - !Ref "AWS::AccountId"
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: c4a39afa-8014-47c5-84c4-2d6fc385e097

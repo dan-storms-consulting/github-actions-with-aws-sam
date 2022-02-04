@@ -1,0 +1,33 @@
+AWSTemplateFormatVersion: 2010-09-09
+Metadata:
+  'AWS::CloudFormation::Designer':
+    1351e79d-8e85-4348-8b2c-911ba47ce709:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 312.4648132324219
+        'y': 104.81142234802246
+      z: 0
+      embeds: []
+Resources:
+  CB02Lambda:
+    Type: 'AWS::Lambda::Function'
+    DeletionPolicy: Delete
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 1351e79d-8e85-4348-8b2c-911ba47ce709
+    Properties:
+      Runtime: python3.8
+      Handler: lambda_function.lambda_handler
+      FunctionName: chatbot-notification-email
+      Code:
+        S3Bucket: !Join 
+        - '-'
+        - - chat-bot
+          - !Ref "AWS::AccountId"
+        S3Key: chatbot-notification-email.zip
+      MemorySize: 128
+      PackageType: Zip
+      Role: 'arn:aws:iam::738544000402:role/service-role/MyLambdaExecutionRole'
+      Timeout: 30
