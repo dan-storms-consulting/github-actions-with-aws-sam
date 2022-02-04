@@ -5,16 +5,33 @@ Description: >
 
   Sample SAM Template for pt-chatbot
 
-# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
     Timeout: 30
+    #Tags:
+    Environment:
+      Variables:
+        ENV: dev
 
 Resources:
   PTChatbotFunction:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: pt-chatbot/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      #Policies: "AmazonSESFullAccess"
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      # Environment:
+      #   Variables:
+      #     SENDER: "pt.chatbot.dev@danstormsconsulting.io"
+      #     RECIPIENT: "pt.chatbot.dev@danstormsconsulting.io"
+  PTChatbotEmailFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: pt-chatbot-email/
       Handler: app.lambda_handler
       Runtime: python3.9
       Policies: "AmazonSESFullAccess"
@@ -23,7 +40,6 @@ Resources:
       MemorySize: 128
       Environment:
         Variables:
-          ENV: dev
           SENDER: "pt.chatbot.dev@danstormsconsulting.io"
           RECIPIENT: "pt.chatbot.dev@danstormsconsulting.io"
       # Events:
@@ -38,8 +54,14 @@ Outputs:
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
   PTChatbotFunction:
-    Description: "Hello World Lambda Function ARN"
+    Description: "PT Chatbot Function Lambda Function ARN"
     Value: !GetAtt PTChatbotFunction.Arn
+  PTChatbotEmailFunction:
+    Description: "PT Chatbot Email Lambda Function ARN"
+    Value: !GetAtt PTChatbotEmailFunction.Arn
   PTChatbotFunctionIamRole:
-    Description: "Implicit IAM Role created for Hello World function"
+    Description: "Implicit IAM Role created for PT Chatbot Function function"
+    Value: !GetAtt PTChatbotFunction.Arn
+  PTChatbotEmailFunctionIamRole:
+    Description: "Implicit IAM Role created for PT Chatbot Email Function function"
     Value: !GetAtt PTChatbotFunction.Arn
