@@ -130,9 +130,17 @@ def send_email(contact_info):
         "PT-Chatbot Test\r\n"
         "PT chatbot here! A patient has a question or would like to schedule an appointment "
         + str(contact_info)
-        + f"""First Name: {contact_info[0]}\r\n
+        + f"""First Name: {contact_info.get("first_name_interpreted")}\r\n
         !"""
     )
+
+    # "first_name_interpreted": first_name_interpreted,
+    # "last_name_interpreted": last_name_interpreted,
+    # "email_interpreted": email_interpreted,
+    # "phone_interpreted": phone_interpreted,
+    # "insurance_company_interpreted": insurance_company_interpreted,
+    # "insurance_number_interpreted": insurance_number_interpreted,
+    # "date_of_birth_interpreted": date_of_birth_interpreted,
 
     # The HTML body of the email.
     BODY_HTML = (
